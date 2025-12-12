@@ -272,6 +272,31 @@ const App3DTerminal = ({ onLaunch }) => {
             case 'ls':
                 newHistory.push('<span style="color: #4361ee">projects/</span>  <span style="color: #4361ee">documents/</span>  resume.pdf  skills.dat');
                 break;
+            case 'cd': {
+                const target = parts[1];
+
+                if (!target) {
+                    newHistory.push('<span style="color:#ff3366">cd: missing operand</span>');
+                    break;
+                }
+
+                if (target === '..') {
+                    if (cwd.length > 1) {
+                        setCwd(cwd.slice(0, -1));
+                    }
+                    break;
+                }
+
+                // Allowed directories shown by "ls"
+                const validDirs = ['projects', 'documents'];
+
+                if (validDirs.includes(target)) {
+                    setCwd([...cwd, target]);
+                } else {
+                    newHistory.push(`<span style="color:#ff3366">cd: ${target}: No such directory</span>`);
+                }
+                break;
+            }
             default:
                 newHistory.push(`<span style="color: #ff3366">bash: ${command}: command not found</span>`);
         }

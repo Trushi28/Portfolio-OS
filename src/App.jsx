@@ -407,6 +407,28 @@ const AppTerminal = ({ onLaunch }) => {
       else if (command === 'ls') { newHistory.push("projects/  resume.pdf  skills.orbit"); }
       else if (command === 'skills') { onLaunch('skills'); newHistory.push("Launching Skills Orbit..."); }
       else if (command === '3d') { onLaunch('terminal3d'); newHistory.push("Switching to 3D mode..."); }
+      else if (command === 'cd') {
+        const target = cmd.split(' ')[1];
+        if (!target) {newHistory.push("cd: missing operand");} 
+        else if (target === "..") {if (cwd.length > 1) setCwd(cwd.slice(0, -1));} 
+        else {
+          const next = [...cwd, target];
+          const getPathContent = (pathArray) => {
+            let node = { children: FILE_SYSTEM };
+            for (const part of pathArray) {
+              if (!node.children || !node.children[part]) return null;
+              node = node.children[part];
+            }
+            return node;
+          };
+          const found = getPathContent(next);
+          if (found && found.type === "dir") {
+            setCwd(next);
+          } else {
+            newHistory.push(`cd: ${target}: No such directory`);
+          }
+        }
+      }
       else { newHistory.push(`bash: ${command}: command not found`); }
       setHistory(newHistory); setInput("");
     }
