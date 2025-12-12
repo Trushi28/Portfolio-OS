@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --font-mono: "Fira Code", "JetBrains Mono", monospace;
+  --color-neon-blue: #00f3ff;
+  --color-neon-pink: #ff0055;
+  --animate-turn-on: turnOn 4s linear forwards;
+  --animate-flicker: flicker 0.15s infinite;
+}
+
+@layer base {
+  body {
+    @apply bg-black text-white font-mono overflow-hidden m-0;
+    user-select: none;
+  }
+  
+  /* CRT SCREEN EFFECT */
+  .crt-screen {
+    background: radial-gradient(circle, rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.6) 100%);
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  .scanlines {
+    background: linear-gradient(
+      to bottom,
+      rgba(255,255,255,0),
+      rgba(255,255,255,0) 50%,
+      rgba(0,0,0,0.2) 50%,
+      rgba(0,0,0,0.2)
+    );
+    background-size: 100% 4px;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    pointer-events: none;
+    animation: scrollLines 10s linear infinite;
+  }
+}
+
+@keyframes scrollLines {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #fff; }
