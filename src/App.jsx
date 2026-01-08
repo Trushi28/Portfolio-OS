@@ -27,6 +27,8 @@ import CommandPalette from './components/CommandPalette';
 import AchievementSystem, { AchievementBadge } from './components/AchievementSystem';
 import MatrixRain, { MatrixRainToggle } from './components/MatrixRain';
 import ParticleCursor, { ParticlesToggle } from './components/ParticleCursor';
+import CyberWorld from './components/games/CyberWorld';
+import CreativeResume from './components/CreativeResume';
 
 // --- 📝 RESUME DATA STORE ---
 const RESUME_DATA = {
@@ -845,7 +847,11 @@ export default function App() {
       )}
       {state === "GRUB" && (
         <div className="h-full w-full relative">
-          <GrubScene onBoot={() => setState("DESKTOP")} />
+          <GrubScene onSelect={(option) => {
+            if (option === 'desktop') setState("DESKTOP");
+            else if (option === 'cyberworld') setState("CYBERWORLD");
+            else if (option === 'resume') setState("RESUME");
+          }} />
           <div className="absolute bottom-8 right-8 z-50">
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -858,6 +864,8 @@ export default function App() {
         </div>
       )}
       {state === "DESKTOP" && <Desktop />}
+      {state === "CYBERWORLD" && <CyberWorld onExit={() => setState("GRUB")} />}
+      {state === "RESUME" && <CreativeResume onExit={() => setState("GRUB")} />}
     </div>
   );
 }
