@@ -7,8 +7,8 @@ import { useSettingsStore } from '../../store/settingsStore';
 const CONTACT_METHODS = [
     { icon: Mail, label: 'Email', value: 'trushibethu@gmail.com', type: 'email' },
     { icon: Phone, label: 'Phone', value: '+91 9059165740', type: 'phone' },
-    { icon: Github, label: 'GitHub', value: 'github.com/yourusername', type: 'link', url: 'https://github.com' },
-    { icon: Linkedin, label: 'LinkedIn', value: 'linkedin.com/in/yourprofile', type: 'link', url: 'https://linkedin.com' },
+    { icon: Github, label: 'GitHub', value: 'github.com/Trushi28', type: 'link', url: 'https://github.com/Trushi28' },
+    { icon: Linkedin, label: 'LinkedIn', value: 'linkedin.com/in/trushi-bethu', type: 'link', url: 'https://linkedin.com/in/trushi-bethu' },
 ];
 
 const ContactMethod = ({ method }) => {

@@ -6,7 +6,7 @@ import {
   Maximize2, Minimize2, AlertCircle, ChevronRight,
   FileCode, FileText, Play, ArrowLeft, Save, Type, Leaf, Layers, Box,
   CheckCircle2, Clock, Layout, Settings, Plus, Trash2, GripHorizontal, Lightbulb, RotateCcw,
-  Globe, Sparkles, Volume2, VolumeX, Mail, Award, FolderOpen
+  Globe, Sparkles, Volume2, VolumeX, Mail, Award, FolderOpen, Trophy, Command
 } from 'lucide-react';
 
 // 3D Components
@@ -21,6 +21,12 @@ import AppContact from './components/apps/AppContact';
 import { CYBER_COLORS } from './components/three/ThreeBackground';
 import { NotificationSystem } from './components/NotificationSystem';
 import { useSettingsStore } from './store/settingsStore';
+
+// New Feature Components
+import CommandPalette from './components/CommandPalette';
+import AchievementSystem, { AchievementBadge } from './components/AchievementSystem';
+import MatrixRain, { MatrixRainToggle } from './components/MatrixRain';
+import ParticleCursor, { ParticlesToggle } from './components/ParticleCursor';
 
 // --- 📝 RESUME DATA STORE ---
 const RESUME_DATA = {
@@ -81,6 +87,14 @@ const AppSnake = () => {
   const canvasRef = useRef(null);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const { trackSnakeScore } = useSettingsStore();
+
+  // Track score when game ends
+  useEffect(() => {
+    if (gameOver && score > 0) {
+      trackSnakeScore(score);
+    }
+  }, [gameOver, score]);
 
   useEffect(() => {
     const ctx = canvasRef.current.getContext('2d');
@@ -461,8 +475,15 @@ const Desktop = () => {
   const [windows, setWindows] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [showGlitch, setShowGlitch] = useState(false);
-  const { volume, setVolume, isMuted, toggleMute, addNotification } = useSettingsStore();
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
+  const { volume, setVolume, isMuted, toggleMute, addNotification, trackAppOpen, trackShortcut, checkNightOwl } = useSettingsStore();
   const playSound = useAudio();
+
+  // Check night owl achievement on mount
+  useEffect(() => {
+    checkNightOwl();
+  }, []);
 
   const APPS = {
     terminal: { id: 'terminal', icon: <Terminal />, title: 'Terminal', comp: AppTerminal },
@@ -482,15 +503,30 @@ const Desktop = () => {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Esc - Close active window
-      if (e.key === 'Escape' && activeId) {
-        close(activeId);
+      // Cmd+K or Ctrl+K - Command Palette
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(true);
+        trackShortcut();
         playSound('click');
+      }
+
+      // Esc - Close active window or command palette
+      if (e.key === 'Escape') {
+        if (showCommandPalette) {
+          setShowCommandPalette(false);
+        } else if (showAchievements) {
+          setShowAchievements(false);
+        } else if (activeId) {
+          close(activeId);
+          playSound('click');
+        }
       }
 
       // Alt+Tab - Switch windows
       if (e.altKey && e.key === 'Tab') {
         e.preventDefault();
+        trackShortcut();
         const visibleWindows = windows.filter(w => !w.minimized);
         if (visibleWindows.length > 0) {
           const currentIndex = visibleWindows.findIndex(w => w.id === activeId);
@@ -503,13 +539,16 @@ const Desktop = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeId, windows]);
+  }, [activeId, windows, showCommandPalette, showAchievements]);
 
   const launch = (key, data = null) => {
     playSound('click');
     setShowGlitch(true);
     setTimeout(() => setShowGlitch(false), 300);
     const instanceId = key;
+
+    // Track for achievements
+    trackAppOpen(key);
 
     const existing = windows.find(w => w.id === instanceId);
     if (existing) {
@@ -554,6 +593,12 @@ const Desktop = () => {
       {/* 3D Background */}
       <DesktopBackground3D />
 
+      {/* Matrix Rain Effect */}
+      <MatrixRain />
+
+      {/* Particle Cursor */}
+      <ParticleCursor />
+
       {/* CRT Effect Overlay */}
       <CRTOverlay intensity={0.5} />
 
@@ -563,12 +608,46 @@ const Desktop = () => {
       {/* Notification System */}
       <NotificationSystem />
 
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        onLaunch={launch}
+      />
+
+      {/* Achievement System Modal */}
+      <AchievementSystem
+        isOpen={showAchievements}
+        onClose={() => setShowAchievements(false)}
+      />
+
       {/* Top Bar */}
       <div className="absolute top-0 w-full h-8 bg-black/60 backdrop-blur-md border-b border-white/10 flex justify-between px-4 items-center z-[100] text-xs text-white">
-        <span className="font-bold tracking-widest" style={{ color: CYBER_COLORS.primary }}>◈ NEXUS HYPERVISOR</span>
+        <div className="flex items-center gap-4">
+          <span className="font-bold tracking-widest" style={{ color: CYBER_COLORS.primary }}>◈ NEXUS HYPERVISOR</span>
 
-        {/* Volume Control */}
+          {/* Command Palette Trigger */}
+          <button
+            onClick={() => setShowCommandPalette(true)}
+            className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/10 rounded-md hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+          >
+            <Command size={12} />
+            <span className="text-[10px] font-mono">Ctrl+K</span>
+          </button>
+        </div>
+
+        {/* Right Controls */}
         <div className="flex items-center gap-3">
+          {/* Visual Effects Toggles */}
+          <div className="flex items-center gap-2">
+            <MatrixRainToggle />
+            <ParticlesToggle />
+          </div>
+
+          {/* Achievement Badge */}
+          <AchievementBadge onClick={() => setShowAchievements(true)} />
+
+          {/* Volume Control */}
           <div className="flex items-center gap-2">
             <button
               onClick={toggleMute}
@@ -674,7 +753,7 @@ const Desktop = () => {
 
         {/* Dock */}
         <div className="flex gap-3 bg-white/10 backdrop-blur-2xl border border-white/20 px-4 py-2.5 rounded-xl shadow-2xl">
-          {['about', 'projects', 'contact', 'terminal3d', 'skills', 'dashboard', 'puzzle'].map(key => (
+          {['about', 'projects', 'contact', 'terminal3d', 'skills', 'snake', 'puzzle'].map(key => (
             <motion.button
               key={key}
               whileHover={{ scale: 1.2, y: -8 }}

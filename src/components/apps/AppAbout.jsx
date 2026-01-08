@@ -45,8 +45,8 @@ const INTERESTS = [
 const CONTACT_INFO = [
     { icon: Mail, label: 'trushibethu@gmail.com', action: 'mailto:trushibethu@gmail.com' },
     { icon: Phone, label: '+91 9059165740', action: 'tel:+919059165740' },
-    { icon: Github, label: 'GitHub', action: 'https://github.com' },
-    { icon: Linkedin, label: 'LinkedIn', action: 'https://linkedin.com' },
+    { icon: Github, label: 'GitHub', action: 'https://github.com/Trushi28' },
+    { icon: Linkedin, label: 'LinkedIn', action: 'https://linkedin.com/in/trushi-bethu' },
 ];
 
 export default function AppAbout() {
@@ -96,8 +96,8 @@ export default function AppAbout() {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-4 py-2 rounded-lg font-mono text-sm transition-all ${activeTab === tab
-                                ? 'bg-cyan-500/20 border border-cyan-400 text-cyan-400 shadow-lg'
-                                : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10'
+                            ? 'bg-cyan-500/20 border border-cyan-400 text-cyan-400 shadow-lg'
+                            : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10'
                             }`}
                     >
                         {tab.toUpperCase()}
