@@ -6,7 +6,7 @@ import {
   Maximize2, Minimize2, AlertCircle, ChevronRight,
   FileCode, FileText, Play, ArrowLeft, Save, Type, Leaf, Layers, Box,
   CheckCircle2, Clock, Layout, Settings, Plus, Trash2, GripHorizontal, Lightbulb, RotateCcw,
-  Globe, Sparkles
+  Globe, Sparkles, Volume2, VolumeX, Mail, Award, FolderOpen
 } from 'lucide-react';
 
 // 3D Components
@@ -15,7 +15,12 @@ import DesktopBackground3D from './components/three/DesktopBackground3D';
 import { GlitchTransition, CRTOverlay, HolographicIcon, CyberLoader } from './components/three/GlitchTransition';
 import AppSkillsOrbit from './components/apps/AppSkillsOrbit';
 import App3DTerminal from './components/apps/App3DTerminal';
+import AppAbout from './components/apps/AppAbout';
+import AppProjects from './components/apps/AppProjects';
+import AppContact from './components/apps/AppContact';
 import { CYBER_COLORS } from './components/three/ThreeBackground';
+import { NotificationSystem } from './components/NotificationSystem';
+import { useSettingsStore } from './store/settingsStore';
 
 // --- 📝 RESUME DATA STORE ---
 const RESUME_DATA = {
@@ -43,24 +48,32 @@ const RESUME_DATA = {
 };
 
 // --- 🔊 AUDIO ENGINE ---
-const playSound = (type) => {
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  const now = ctx.currentTime;
+const useAudio = () => {
+  const { volume, isMuted } = useSettingsStore();
 
-  const sounds = {
-    power: () => { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(50, now); osc.frequency.linearRampToValueAtTime(100, now + 1); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); osc.stop(now + 1.5); },
-    bios: () => { osc.type = 'square'; osc.frequency.setValueAtTime(800, now); gain.gain.setValueAtTime(0.1, now); osc.stop(now + 0.15); },
-    click: () => { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); osc.stop(now + 0.1); },
-    scan: () => { osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(600, now + 0.2); gain.gain.setValueAtTime(0.05, now); osc.stop(now + 0.2); },
-    error: () => { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.2); osc.stop(now + 0.2); },
-    slide: () => { osc.type = 'sine'; osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(100, now + 0.1); gain.gain.setValueAtTime(0.05, now); osc.stop(now + 0.1); },
-    glitch: () => { osc.type = 'square'; osc.frequency.setValueAtTime(100, now); osc.frequency.linearRampToValueAtTime(50, now + 0.1); gain.gain.setValueAtTime(0.08, now); osc.stop(now + 0.15); },
+  const playSound = (type) => {
+    if (isMuted) return;
+
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+
+    const sounds = {
+      power: (v) => { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(50, now); osc.frequency.linearRampToValueAtTime(100, now + 1); gain.gain.setValueAtTime(0.2 * v, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); osc.stop(now + 1.5); },
+      bios: (v) => { osc.type = 'square'; osc.frequency.setValueAtTime(800, now); gain.gain.setValueAtTime(0.1 * v, now); osc.stop(now + 0.15); },
+      click: (v) => { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); gain.gain.setValueAtTime(0.05 * v, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); osc.stop(now + 0.1); },
+      scan: (v) => { osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(600, now + 0.2); gain.gain.setValueAtTime(0.05 * v, now); osc.stop(now + 0.2); },
+      error: (v) => { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gain.gain.setValueAtTime(0.1 * v, now); gain.gain.linearRampToValueAtTime(0, now + 0.2); osc.stop(now + 0.2); },
+      slide: (v) => { osc.type = 'sine'; osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(100, now + 0.1); gain.gain.setValueAtTime(0.05 * v, now); osc.stop(now + 0.1); },
+      glitch: (v) => { osc.type = 'square'; osc.frequency.setValueAtTime(100, now); osc.frequency.linearRampToValueAtTime(50, now + 0.1); gain.gain.setValueAtTime(0.08 * v, now); osc.stop(now + 0.15); },
+    };
+    if (sounds[type]) { osc.start(now); sounds[type](volume); }
   };
-  if (sounds[type]) { osc.start(now); sounds[type](); }
+
+  return playSound;
 };
 
 // --- 🐍 APP: SNAKE GAME ---
@@ -409,8 +422,8 @@ const AppTerminal = ({ onLaunch }) => {
       else if (command === '3d') { onLaunch('terminal3d'); newHistory.push("Switching to 3D mode..."); }
       else if (command === 'cd') {
         const target = cmd.split(' ')[1];
-        if (!target) {newHistory.push("cd: missing operand");} 
-        else if (target === "..") {if (cwd.length > 1) setCwd(cwd.slice(0, -1));} 
+        if (!target) { newHistory.push("cd: missing operand"); }
+        else if (target === "..") { if (cwd.length > 1) setCwd(cwd.slice(0, -1)); }
         else {
           const next = [...cwd, target];
           const getPathContent = (pathArray) => {
@@ -448,11 +461,16 @@ const Desktop = () => {
   const [windows, setWindows] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [showGlitch, setShowGlitch] = useState(false);
+  const { volume, setVolume, isMuted, toggleMute, addNotification } = useSettingsStore();
+  const playSound = useAudio();
 
   const APPS = {
     terminal: { id: 'terminal', icon: <Terminal />, title: 'Terminal', comp: AppTerminal },
     terminal3d: { id: 'terminal3d', icon: <Sparkles />, title: 'Holo Terminal', comp: App3DTerminal },
     explorer: { id: 'explorer', icon: <Folder />, title: 'Files', comp: AppExplorer },
+    about: { id: 'about', icon: <User />, title: 'About Me', comp: AppAbout },
+    projects: { id: 'projects', icon: <FolderOpen />, title: 'Projects', comp: AppProjects },
+    contact: { id: 'contact', icon: <Mail />, title: 'Contact', comp: AppContact },
     ecoscan: { id: 'ecoscan', icon: <Leaf />, title: 'EcoScan', comp: AppEcoScan },
     resume: { id: 'resume', icon: <FileText />, title: 'Resume', comp: AppResume },
     snake: { id: 'snake', icon: <Gamepad2 />, title: 'Snake', comp: AppSnake },
@@ -461,19 +479,75 @@ const Desktop = () => {
     skills: { id: 'skills', icon: <Globe />, title: 'Skills Orbit', comp: AppSkillsOrbit },
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Esc - Close active window
+      if (e.key === 'Escape' && activeId) {
+        close(activeId);
+        playSound('click');
+      }
+
+      // Alt+Tab - Switch windows
+      if (e.altKey && e.key === 'Tab') {
+        e.preventDefault();
+        const visibleWindows = windows.filter(w => !w.minimized);
+        if (visibleWindows.length > 0) {
+          const currentIndex = visibleWindows.findIndex(w => w.id === activeId);
+          const nextIndex = (currentIndex + 1) % visibleWindows.length;
+          setActiveId(visibleWindows[nextIndex].id);
+          playSound('click');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeId, windows]);
+
   const launch = (key, data = null) => {
     playSound('click');
     setShowGlitch(true);
     setTimeout(() => setShowGlitch(false), 300);
     const instanceId = key;
-    if (!windows.find(w => w.id === instanceId)) {
-      setWindows(p => [...p, { id: instanceId, title: APPS[key].title, icon: APPS[key].icon, comp: APPS[key].comp, data, z: p.length + 1, max: false }]);
+
+    const existing = windows.find(w => w.id === instanceId);
+    if (existing) {
+      // If minimized, restore it
+      if (existing.minimized) {
+        setWindows(p => p.map(w => w.id === instanceId ? { ...w, minimized: false } : w));
+      }
+      setActiveId(instanceId);
+    } else {
+      setWindows(p => [...p, {
+        id: instanceId,
+        title: APPS[key].title,
+        icon: APPS[key].icon,
+        comp: APPS[key].comp,
+        data,
+        z: p.length + 1,
+        max: false,
+        minimized: false
+      }]);
+      setActiveId(instanceId);
     }
-    setActiveId(instanceId);
   };
 
-  const close = (id) => setWindows(p => p.filter(w => w.id !== id));
+  const close = (id) => {
+    setWindows(p => p.filter(w => w.id !== id));
+    playSound('click');
+  };
+
   const toggleMax = (id) => setWindows(p => p.map(w => w.id === id ? { ...w, max: !w.max } : w));
+
+  const minimize = (id) => {
+    setWindows(p => p.map(w => w.id === id ? { ...w, minimized: true } : w));
+    playSound('slide');
+    if (activeId === id) {
+      const visibleWindows = windows.filter(w => w.id !== id && !w.minimized);
+      setActiveId(visibleWindows.length > 0 ? visibleWindows[0].id : null);
+    }
+  };
 
   return (
     <div className="h-screen w-screen overflow-hidden relative font-sans select-none">
@@ -486,15 +560,43 @@ const Desktop = () => {
       {/* Glitch Transition */}
       <GlitchTransition isActive={showGlitch} duration={300} />
 
+      {/* Notification System */}
+      <NotificationSystem />
+
       {/* Top Bar */}
       <div className="absolute top-0 w-full h-8 bg-black/60 backdrop-blur-md border-b border-white/10 flex justify-between px-4 items-center z-[100] text-xs text-white">
         <span className="font-bold tracking-widest" style={{ color: CYBER_COLORS.primary }}>◈ NEXUS HYPERVISOR</span>
-        <span className="text-gray-400">{new Date().toLocaleTimeString()}</span>
+
+        {/* Volume Control */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleMute}
+              className="hover:bg-white/10 p-1 rounded transition-colors"
+            >
+              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+              style={{
+                accentColor: CYBER_COLORS.primary,
+              }}
+            />
+            <span className="text-xs text-gray-500 w-6 font-mono">{Math.round(volume * 100)}</span>
+          </div>
+          <span className="text-gray-400">{new Date().toLocaleTimeString()}</span>
+        </div>
       </div>
 
       {/* Desktop Icons */}
       <div className="absolute top-12 left-4 flex flex-col gap-4 z-[5]">
-        {['explorer', 'terminal3d', 'dashboard', 'skills', 'resume'].map(key => (
+        {['about', 'projects', 'contact', 'terminal3d', 'resume'].map(key => (
           <div key={key} onDoubleClick={() => launch(key)} className="group flex flex-col items-center w-20 cursor-pointer">
             <HolographicIcon isActive={activeId === key}>
               <div className="w-14 h-14 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center group-hover:bg-white/10 transition-colors backdrop-blur-sm shadow-lg" style={{ boxShadow: `0 0 20px ${CYBER_COLORS.primary}20` }}>
@@ -508,16 +610,30 @@ const Desktop = () => {
 
       {/* Windows */}
       <AnimatePresence>
-        {windows.map((win) => (
+        {windows.filter(w => !w.minimized).map((win) => (
           <motion.div key={win.id}
-            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-            drag={!win.max} dragMomentum={false} onMouseDown={() => setActiveId(win.id)}
-            style={{ width: win.max ? '100%' : 850, height: win.max ? 'calc(100% - 32px - 90px)' : 600, top: win.max ? 32 : 80, left: win.max ? 0 : 120, zIndex: activeId === win.id ? 50 : 10, borderRadius: win.max ? 0 : '0.75rem' }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0, y: 100 }}
+            drag={!win.max}
+            dragMomentum={false}
+            onMouseDown={() => setActiveId(win.id)}
+            style={{
+              width: win.max ? '100%' : 850,
+              height: win.max ? 'calc(100% - 32px - 90px)' : 600,
+              top: win.max ? 32 : 80,
+              left: win.max ? 0 : 120,
+              zIndex: activeId === win.id ? 50 : 10,
+              borderRadius: win.max ? 0 : '0.75rem'
+            }}
             className="absolute bg-slate-900/95 backdrop-blur-xl border border-white/10 overflow-hidden shadow-2xl flex flex-col"
           >
             <div className="h-9 bg-white/5 border-b border-white/10 flex justify-between items-center px-3 cursor-move shrink-0" onDoubleClick={() => toggleMax(win.id)}>
-              <div className="flex items-center gap-2 text-gray-300 text-xs uppercase tracking-wider">{React.cloneElement(win.icon, { size: 14 })} {win.title}</div>
+              <div className="flex items-center gap-2 text-gray-300 text-xs uppercase tracking-wider">
+                {React.cloneElement(win.icon, { size: 14 })} {win.title}
+              </div>
               <div className="flex gap-2">
+                <button onClick={() => minimize(win.id)} className="hover:bg-white/10 p-1 rounded"><Minus size={12} className="text-gray-400" /></button>
                 <button onClick={() => toggleMax(win.id)} className="hover:bg-white/10 p-1 rounded"><Maximize2 size={12} className="text-gray-400" /></button>
                 <button onClick={() => close(win.id)} className="hover:bg-red-500 p-1 rounded group"><X size={12} className="text-gray-400 group-hover:text-white" /></button>
               </div>
@@ -529,15 +645,48 @@ const Desktop = () => {
         ))}
       </AnimatePresence>
 
-      {/* Dock */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[100] flex gap-4 bg-white/10 backdrop-blur-2xl border border-white/20 px-4 py-3 rounded-2xl shadow-2xl" style={{ boxShadow: `0 0 40px ${CYBER_COLORS.primary}30` }}>
-        {['explorer', 'terminal3d', 'dashboard', 'skills', 'ecoscan', 'puzzle'].map(key => (
-          <motion.button key={key} whileHover={{ scale: 1.2, y: -8 }} onClick={() => launch(key)} onMouseEnter={() => playSound('click')}
-            className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/10 hover:border-cyan-400 transition-colors shadow-lg"
-            style={{ background: `linear-gradient(135deg, ${CYBER_COLORS.darker}, #1a1a2e)` }}>
-            {React.cloneElement(APPS[key].icon, { size: 22, className: "text-gray-300" })}
-          </motion.button>
-        ))}
+      {/* Taskbar */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-black/60 backdrop-blur-xl border-t border-white/10 flex items-center justify-between px-4 z-[100]">
+        {/* Open Windows */}
+        <div className="flex gap-2 flex-1 overflow-x-auto">
+          {windows.map((win) => (
+            <motion.button
+              key={win.id}
+              whileHover={{ scale: 1.05 }}
+              onClick={() => {
+                if (win.minimized) {
+                  setWindows(p => p.map(w => w.id === win.id ? { ...w, minimized: false } : w));
+                }
+                setActiveId(win.id);
+                playSound('click');
+              }}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${activeId === win.id && !win.minimized
+                ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                }`}
+            >
+              {React.cloneElement(win.icon, { size: 16 })}
+              <span className="text-xs font-mono max-w-[100px] truncate">{win.title}</span>
+              {win.minimized && <span className="text-[10px] opacity-50">(minimized)</span>}
+            </motion.button>
+          ))}
+        </div>
+
+        {/* Dock */}
+        <div className="flex gap-3 bg-white/10 backdrop-blur-2xl border border-white/20 px-4 py-2.5 rounded-xl shadow-2xl">
+          {['about', 'projects', 'contact', 'terminal3d', 'skills', 'dashboard', 'puzzle'].map(key => (
+            <motion.button
+              key={key}
+              whileHover={{ scale: 1.2, y: -8 }}
+              onClick={() => launch(key)}
+              onMouseEnter={() => playSound('click')}
+              className="w-10 h-10 rounded-lg flex items-center justify-center border border-white/10 hover:border-cyan-400 transition-colors shadow-lg"
+              style={{ background: `linear-gradient(135deg, ${CYBER_COLORS.darker}, #1a1a2e)` }}
+            >
+              {React.cloneElement(APPS[key].icon, { size: 18, className: "text-gray-300" })}
+            </motion.button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -547,6 +696,15 @@ const Desktop = () => {
 export default function App() {
   const [state, setState] = useState("OFF");
   const [memProgress, setMemProgress] = useState(0);
+  const { skipBoot, setSkipBoot } = useSettingsStore();
+  const playSound = useAudio();
+
+  // Skip directly to desktop if enabled
+  useEffect(() => {
+    if (skipBoot) {
+      setState("DESKTOP");
+    }
+  }, [skipBoot]);
 
   useEffect(() => {
     if (state === "BIOS") {
@@ -570,21 +728,54 @@ export default function App() {
     setState("BIOS");
   };
 
+  const handleSkipBoot = () => {
+    setSkipBoot(true);
+    setState("DESKTOP");
+  };
+
   return (
     <div className="bg-black h-screen w-screen overflow-hidden">
       {state === "OFF" && (
-        <div className="h-full w-full">
+        <div className="h-full w-full relative">
           <PowerScene onPowerOn={handlePowerOn} />
+          {/* Skip Boot Option */}
+          <div className="absolute bottom-8 right-8 z-50">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              onClick={handleSkipBoot}
+              className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-xs font-mono hover:bg-white/20 transition-all"
+            >
+              Skip Boot Sequence
+            </motion.button>
+          </div>
         </div>
       )}
       {state === "BIOS" && (
-        <div className="h-full w-full">
+        <div className="h-full w-full relative">
           <BiosScene memoryProgress={memProgress} />
+          <div className="absolute bottom-8 right-8 z-50">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              onClick={handleSkipBoot}
+              className="px-4 py-2 bg-cyan-500/20 border border-cyan-400 rounded-lg text-cyan-400 text-xs font-mono hover:bg-cyan-500/30 transition-all"
+            >
+              Skip to Desktop
+            </motion.button>
+          </div>
         </div>
       )}
       {state === "GRUB" && (
-        <div className="h-full w-full">
+        <div className="h-full w-full relative">
           <GrubScene onBoot={() => setState("DESKTOP")} />
+          <div className="absolute bottom-8 right-8 z-50">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              onClick={handleSkipBoot}
+              className="px-4 py-2 bg-cyan-500/20 border border-cyan-400 rounded-lg text-cyan-400 text-xs font-mono hover:bg-cyan-500/30 transition-all"
+            >
+              Skip to Desktop
+            </motion.button>
+          </div>
         </div>
       )}
       {state === "DESKTOP" && <Desktop />}
