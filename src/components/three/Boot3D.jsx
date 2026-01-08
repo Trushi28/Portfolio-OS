@@ -271,13 +271,28 @@ const GrubCube = ({ position, label, isSelected, onClick }) => {
     );
 };
 
-const GrubSelector = ({ onBoot }) => {
+const GrubSelector = ({ onSelect }) => {
     const [selected, setSelected] = useState(0);
     const options = [
-        { label: '▸ NEXUS HYPERVISOR', id: 'desktop' },
-        { label: '▸ Recovery Mode', id: 'recovery' },
-        { label: '▸ System Diagnostics', id: 'diag' },
+        { label: '▸ NEXUS OS', id: 'desktop', desc: 'Full Desktop Experience' },
+        { label: '▸ CYBER WORLD', id: 'cyberworld', desc: 'Explore Projects in 3D' },
+        { label: '▸ RESUME', id: 'resume', desc: 'View Resume' },
     ];
+
+    // Keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'ArrowLeft') {
+                setSelected((prev) => (prev - 1 + options.length) % options.length);
+            } else if (e.key === 'ArrowRight') {
+                setSelected((prev) => (prev + 1) % options.length);
+            } else if (e.key === 'Enter') {
+                onSelect(options[selected].id);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selected, onSelect]);
 
     return (
         <group>
@@ -294,7 +309,7 @@ const GrubSelector = ({ onBoot }) => {
                         textShadow: `0 0 30px ${CYBER_COLORS.primary}`,
                         marginBottom: '10px',
                     }}>
-                        GNU GRUB 3.0
+                        NEXUS BOOTLOADER 3.0
                     </div>
                     <div style={{ color: '#666', fontSize: '12px' }}>
                         Use ← → to navigate • Enter to boot
@@ -308,37 +323,35 @@ const GrubSelector = ({ onBoot }) => {
                     key={opt.id}
                     position={[(i - 1) * 5, 0, 0]}
                     label={opt.label}
+                    description={opt.desc}
                     isSelected={selected === i}
                     onClick={() => {
                         setSelected(i);
-                        if (i === 0) setTimeout(onBoot, 500);
                     }}
                 />
             ))}
 
             {/* Boot button */}
-            {selected === 0 && (
-                <Html position={[0, -4, 0]} center>
-                    <button
-                        onClick={onBoot}
-                        style={{
-                            background: `linear-gradient(135deg, ${CYBER_COLORS.primary}, ${CYBER_COLORS.secondary})`,
-                            border: 'none',
-                            padding: '12px 40px',
-                            color: '#000',
-                            fontFamily: 'monospace',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            borderRadius: '4px',
-                            boxShadow: `0 0 30px ${CYBER_COLORS.primary}`,
-                            transition: 'all 0.3s',
-                        }}
-                    >
-                        ▸ INITIALIZE SYSTEM
-                    </button>
-                </Html>
-            )}
+            <Html position={[0, -4, 0]} center>
+                <button
+                    onClick={() => onSelect(options[selected].id)}
+                    style={{
+                        background: `linear-gradient(135deg, ${CYBER_COLORS.primary}, ${CYBER_COLORS.secondary})`,
+                        border: 'none',
+                        padding: '12px 40px',
+                        color: '#000',
+                        fontFamily: 'monospace',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        borderRadius: '4px',
+                        boxShadow: `0 0 30px ${CYBER_COLORS.primary}`,
+                        transition: 'all 0.3s',
+                    }}
+                >
+                    ▸ INITIALIZE {options[selected].id.toUpperCase()}
+                </button>
+            </Html>
 
             {/* Background particles */}
             <FloatingParticles count={300} color={CYBER_COLORS.secondary} speed={0.1} spread={50} />
@@ -387,7 +400,7 @@ export const BiosScene = ({ memoryProgress, onComplete }) => {
     );
 };
 
-export const GrubScene = ({ onBoot }) => {
+export const GrubScene = ({ onSelect }) => {
     return (
         <Canvas camera={{ position: [0, 0, 12], fov: 50 }}>
             <color attach="background" args={[CYBER_COLORS.darker]} />
@@ -395,7 +408,7 @@ export const GrubScene = ({ onBoot }) => {
             <pointLight position={[0, 5, 5]} intensity={1} color={CYBER_COLORS.primary} />
 
             <Suspense fallback={null}>
-                <GrubSelector onBoot={onBoot} />
+                <GrubSelector onSelect={onSelect} />
             </Suspense>
 
             <EffectComposer>
