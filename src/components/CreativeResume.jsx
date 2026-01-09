@@ -343,7 +343,7 @@ export default function CreativeResume({ onExit }) {
     }, [onExit]);
 
     return (
-        <div className="min-h-screen bg-[#030308] text-white font-mono overflow-auto">
+        <div className="min-h-screen bg-[#030308] text-white font-mono overflow-y-auto overflow-x-hidden" style={{ scrollBehavior: 'smooth' }}>
             {/* Animated grid background */}
             <div
                 className="fixed inset-0 pointer-events-none"
@@ -356,6 +356,35 @@ export default function CreativeResume({ onExit }) {
                     transform: `translateY(${scrollY * 0.1}px)`,
                 }}
             />
+
+            {/* Animated scan lines effect */}
+            <div
+                className="fixed inset-0 pointer-events-none z-[1] opacity-20"
+                style={{
+                    background: `repeating-linear-gradient(
+                        0deg,
+                        transparent,
+                        transparent 2px,
+                        rgba(0,243,255,0.03) 2px,
+                        rgba(0,243,255,0.03) 4px
+                    )`,
+                    animation: 'scanlines 8s linear infinite',
+                }}
+            />
+            <style>{`
+                @keyframes scanlines {
+                    0% { transform: translateY(0); }
+                    100% { transform: translateY(4px); }
+                }
+                @keyframes pulse-glow {
+                    0%, 100% { filter: drop-shadow(0 0 20px ${CYBER_COLORS.primary}80); }
+                    50% { filter: drop-shadow(0 0 40px ${CYBER_COLORS.primary}ff) drop-shadow(0 0 60px #bf00ff80); }
+                }
+                @keyframes float {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                }
+            `}</style>
 
             {/* Floating orbs */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -439,14 +468,24 @@ export default function CreativeResume({ onExit }) {
                             <span className="text-sm text-gray-500 font-mono">~/resume $ whoami</span>
                         </motion.div>
 
-                        {/* Name with glitch effect */}
+                        {/* Name with enhanced glitch/glow effect */}
                         <motion.h1
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.3, type: 'spring' }}
-                            className="text-5xl sm:text-7xl lg:text-8xl font-black mb-6"
+                            className="text-5xl sm:text-7xl lg:text-8xl font-black mb-6 relative"
+                            style={{
+                                animation: 'pulse-glow 3s ease-in-out infinite',
+                            }}
                         >
                             <GlowText>{RESUME_DATA.name}</GlowText>
+                            {/* Glitch layers */}
+                            <span className="absolute inset-0 opacity-30" style={{ color: '#ff0080', clipPath: 'inset(45% 0 45% 0)', transform: 'translate(-2px, 0)' }}>
+                                {RESUME_DATA.name}
+                            </span>
+                            <span className="absolute inset-0 opacity-30" style={{ color: '#00ffff', clipPath: 'inset(55% 0 35% 0)', transform: 'translate(2px, 0)' }}>
+                                {RESUME_DATA.name}
+                            </span>
                         </motion.h1>
 
                         {/* Role with typing effect */}
@@ -494,14 +533,20 @@ export default function CreativeResume({ onExit }) {
                             </motion.a>
                         </motion.div>
 
-                        {/* Scroll indicator */}
+                        {/* Enhanced Scroll indicator */}
                         <motion.div
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: 1, y: [0, 10, 0] }}
+                            animate={{ opacity: 1, y: [0, 15, 0] }}
                             transition={{ delay: 1, duration: 2, repeat: Infinity }}
-                            className="absolute bottom-10 text-gray-600"
+                            className="absolute bottom-16 flex flex-col items-center gap-2"
                         >
-                            <ChevronRight size={24} className="rotate-90" />
+                            <span className="text-xs text-gray-500 tracking-widest uppercase font-mono">Scroll to explore</span>
+                            <div className="relative">
+                                <ChevronRight size={28} className="rotate-90" style={{ color: CYBER_COLORS.primary }} />
+                                <div className="absolute inset-0 blur-md" style={{ color: CYBER_COLORS.primary }}>
+                                    <ChevronRight size={28} className="rotate-90" />
+                                </div>
+                            </div>
                         </motion.div>
                     </motion.section>
 

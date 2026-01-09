@@ -815,7 +815,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-black h-screen w-screen overflow-hidden">
+    <div className={`bg-black h-screen w-screen ${state === "RESUME" ? "overflow-auto" : "overflow-hidden"}`}>
       {state === "OFF" && (
         <div className="h-full w-full relative">
           <PowerScene onPowerOn={handlePowerOn} />
